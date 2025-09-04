@@ -1,5 +1,7 @@
 let products = [];
 
+const apiUrl = "https://68b7345773b3ec66cec413ee.mockapi.io/pages/products";
+
 // Ejecutar cuando se carga el DOM
 document.addEventListener("DOMContentLoaded", async () => {
   products = (await loadProducts()) || [];
@@ -17,8 +19,8 @@ function formatDate(dateString) {
 //Función para cargar los productos
 async function loadProducts() {
   try {
-    const response = await fetch("../mocks/products.json");
-    const products = await response.json();
+    const response = await axios.get(`${apiUrl}`);
+    const products = response.data;
     //console.log(products);
     return products;
   } catch (error) {
@@ -63,13 +65,13 @@ function generateTable(products) {
 }
 
 //Función para agregar nuevos productos
-document.getElementById("xiaomiForm").addEventListener("submit", (e) => {
+document.getElementById("xiaomiForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const elements = e.target.elements;
   //console.log(elements["productName"].value);
 
   const newProduct = {
-    id: Date.now(),
+    //id: Date.now(),
     name: elements["productName"].value,
     image:
       elements["productImage"].value ||
@@ -77,19 +79,28 @@ document.getElementById("xiaomiForm").addEventListener("submit", (e) => {
     price: elements["productPrice"].value,
     category: elements["productCategory"].value,
     description: elements["productDescription"].value,
-    createdAt: new Date().toISOString(),
+    //createdAt: new Date().toISOString(),
   };
 
-  //console.log(newProduct);
-  Swal.fire({
-    icon: "success",
-    title: "Carga correcta!",
-    text: "El producto se ha cargado correctamente.",
-    theme: "dark",
-  });
-  products.push(newProduct);
-  generateTable(products);
-  e.target.reset();
+  try {
+    const response = await axios.post(apiUrl, newProduct);
+    products.push(response.data);
+    generateTable(products);
+    Swal.fire({
+      icon: "success",
+      title: "Carga correcta!",
+      text: "El producto se ha cargado correctamente.",
+      theme: "dark",
+    });
+    e.target.reset();
+  } catch (error) {
+    console.error("Error al agregar producto", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se pudo agregar el producto.",
+    });
+  }
 });
 
 //Función para eliminar productos
@@ -100,16 +111,18 @@ function deleteProducts(id) {
     showCancelButton: true,
     confirmButtonText: "Eliminar",
     denyButtonText: `No eliminar`,
-  }).then((result) => {
+  }).then(async (result) => {
     /* Read more about isConfirmed, isDenied below */
     if (result.isConfirmed) {
-      const index = products.findIndex((product) => product.id === id);
-      if (index !== -1) {
-        products.splice(index, 1);
-        // Aquí también deberías eliminar la fila de la tabla en el DOM
+      try {
+        await axios.delete(`${apiUrl}/${id}`);
+        products = products.filter((product) => product.id !== id);
         generateTable(products);
+        Swal.fire("Producto Eliminado", "", "success");
+      } catch (error) {
+        console.error("Error al eliminar producto", error);
+        Swal.fire("Error al eliminar el producto", "", "error");
       }
-      Swal.fire("Producto Eliminado", "", "success");
     } else if (result.isDenied) {
       Swal.fire("Cambios no grabados", "", "info");
     }
@@ -120,7 +133,7 @@ function deleteProducts(id) {
 document.querySelector("tbody").addEventListener("click", (e) => {
   if (e.target.closest(".btn-outline-danger")) {
     const row = e.target.closest("tr");
-    const id = parseInt(row.querySelector("th").textContent);
+    const id = row.querySelector("th").textContent;
     deleteProducts(id);
   }
 });
