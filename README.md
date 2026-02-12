@@ -69,8 +69,11 @@ frontend-xiaomi/
 - Sección "Nosotros" con información institucional.
 - Autenticación para el panel de administración.
 - Mejoras de accesibilidad y performance.
+- Implementar funcionalidad de edición de productos en el panel de administración.
 
 ## 🛠 Tecnologías usadas
+
+### Frontend
 
 - HTML5
 - CSS3
